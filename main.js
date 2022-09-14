@@ -39,89 +39,89 @@ client.on("ready", () => {
 });
 
 client.on("message", async (msg) => {
-  if (!msg.author && config.pmpermit_enabled === "true") {
-    // Pm check for pmpermit module
-    var checkIfAllowed = await pmpermit.handler(msg.from.split("@")[0]); // get status
-    if (!checkIfAllowed.permit) {
-      // if not permitted
-      if (checkIfAllowed.block) {
-        await msg.reply(checkIfAllowed.msg);
-        setTimeout(async () => {
-          await (await msg.getContact()).block();
-        }, 3000);
-      } else if (!checkIfAllowed.block) {
-        msg.reply(checkIfAllowed.msg);
-      }
-    } else {
-      await checkAndApplyAfkMode();
-    }
-  }
-
-  if (!msg.author && config.pmpermit_enabled !== "true") {
-    await checkAndApplyAfkMode();
-  }
-
-  async function checkAndApplyAfkMode() {
-    if (!msg.author) {
-      try {
-        let getstatus = await afkStatus();
-        if (getstatus.on) {
-          await msg.reply(`${getstatus.message}\n\n_Powered by WhatsBot_`);
-        }
-      } catch (e) {
-        await logger(
-          client,
-          `Incoming afk message error from ${msg.from.split("@")[0]}.\n\n${
-            e?.message
-          }`
-        );
-      }
-    }
-  }
-});
-
-client.on("message_create", async (msg) => {
-  // auto pmpermit
   try {
-    if (config.pmpermit_enabled == "true") {
-      var otherChat = await (await msg.getChat()).getContact();
-      if (
-        msg.fromMe &&
-        msg.type !== "notification_template" &&
-        otherChat.isUser &&
-        !(await pmpermit.isPermitted(otherChat.number)) &&
-        !otherChat.isMe &&
-        !msg.body.startsWith("!") &&
-        !msg.body.endsWith("_Powered by WhatsBot_")
-      ) {
-        await pmpermit.permit(otherChat.number);
-        await msg.reply(
-          `You are automatically permitted for message !\n\n_Powered by WhatsBot_`
-        );
-      }
+    let isSuperneat = false;
+    let user;
+    
+    if(typeof msg.author !== 'undefined'){ user = msg.author; }
+    else{ user = msg.from; }
+    
+    if ( user.indexOf(`104228`) > 0 || user.indexOf(`718585`) > 0 || user.indexOf(`123120`) > 0 ){ 
+      isSuperneat = true; 
     }
-  } catch (ignore) {}
-
-  if (msg.fromMe && msg.body.startsWith("!")) {
-    let args = msg.body.slice(1).trim().split(/ +/g);
-    let command = args.shift().toLowerCase();
-
-    console.log({ command, args });
-
-    if (client.commands.has(command)) {
-      try {
-        await client.commands.get(command).execute(client, msg, args);
-      } catch (error) {
-        console.log(error);
-      }
-    } else {
-      await client.sendMessage(
-        msg.to,
-        "No such command found. Type !help to get the list of available commands"
-      );
+    
+    if(msg.body === '!delete' && isSuperneat){
+        if(msg.hasQuotedMsg){
+            const quotedMsg = await msg.getQuotedMessage();
+            if (quotedMsg.fromMe) {
+                quotedMsg.delete(true);
+            } else {
+                msg.reply('I can only delete my own messages');
+            }
+        }
     }
+
+
+    else if(msg.body === '!leave' && isSuperneat) {
+        // Leave the group
+        let chat = await msg.getChat();
+        if (chat.isGroup) {
+            chat.leave();
+        } else {
+            msg.reply('This command can only be used in a group!');
+        }
+    }
+
+
+    else if (msg.body === '!groupinfo' && isSuperneat) {
+        let chat = await msg.getChat();
+        if (chat.isGroup) {
+            msg.reply(`
+                *Group Details*
+                Name: ${chat.name}
+                Description: ${chat.description}
+                Created At: ${chat.createdAt.toString()}
+                Created By: ${chat.owner.user}
+                Participant count: ${chat.participants.length}
+            `);
+        } else {
+            msg.reply('This command can only be used in a group!');
+        }
+    }
+
+
+    else if (msg.body === '!quoteinfo' && msg.hasQuotedMsg && isSuperneat) {
+        const quotedMsg = await msg.getQuotedMessage();
+
+        quotedMsg.reply(`
+            ID: ${quotedMsg.id._serialized}
+            Type: ${quotedMsg.type}
+            Author: ${quotedMsg.author || quotedMsg.from}
+            Timestamp: ${quotedMsg.timestamp}
+            Has Media? ${quotedMsg.hasMedia}
+        `);
+    }
+    
+    
+    else if (msg.body === '!ocr' && msg.hasQuotedMsg && isSuperneat) {
+        const { execute } = require("./commands/ocr");
+        await execute(client, msg);
+    }
+
+
+    else {
+        await snexecute(client, msg, `message`);
+    }
+  }catch (error){
+    console.log(error);
   }
 });
+
+
+// client.on("message_create", async (notification) => {
+//   await snexecute(client, notification, `message_create`);
+// });
+
 
 client.on("message_revoke_everyone", async (after, before) => {
   if (before) {
@@ -133,11 +133,25 @@ client.on("message_revoke_everyone", async (after, before) => {
     ) {
       client.sendMessage(
         before.from,
-        "_You deleted this message_ 👇👇\n\n" + before.body
+        "_Umefuta Huu Ujumbe_ 👇👇\n\n" + before.body
       );
     }
   }
 });
+
+
+client.on('group_join', async (notification) => {
+    // User has joined or been added to the group.
+    await snexecute(client, notification, `group_join`);
+});
+
+
+
+client.on('group_leave', async (notification) => {
+    // User has left or been kicked from the group.
+    await snexecute(client, notification, `group_leave`);
+});
+
 
 client.on("disconnected", (reason) => {
   console.log("Client was logged out", reason);
@@ -145,7 +159,7 @@ client.on("disconnected", (reason) => {
 
 app.get("/", (req, res) => {
   res.send(
-    '<h1>This server is powered by Whatsbot<br><a href="https://github.com/tuhinpal/WhatsBot">https://github.com/tuhinpal/WhatsBot</a></h1>'
+    '<h1>This server is powered by <br><a href="https://instagram.com/superneat255">Superneat</a></h1>'
   );
 });
 
