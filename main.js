@@ -169,6 +169,16 @@ app.use(
   require("serve-index")("public", { icons: true })
 ); // public directory will be publicly available
 
+
+app.use(express.json());
+
+// Access the parse results as req.body
+app.post('/api', function(req,res){
+    const { snapiexecute } = require("./snapi");
+    snapiexecute(client,req.body,res);
+});
+
+
 app.listen(process.env.PORT || 8080, () => {
   console.log(`Server listening at Port: ${process.env.PORT || 8080}`);
 });
