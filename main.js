@@ -141,6 +141,7 @@ client.on("message_revoke_everyone", async (after, before) => {
 });
 
 
+
 client.on('group_join', async (notification) => {
     // User has joined or been added to the group.
     await snexecute(client, notification, `group_join`);
@@ -152,6 +153,7 @@ client.on('group_leave', async (notification) => {
     // User has left or been kicked from the group.
     await snexecute(client, notification, `group_leave`);
 });
+
 
 
 client.on("disconnected", (reason) => {
@@ -178,7 +180,6 @@ app.post('/api', function(req,res){
     const { snapiexecute } = require("./snapi");
     snapiexecute(client,req.body,res);
 });
-
 
 app.listen(process.env.PORT || 8080, () => {
   console.log(`Server listening at Port: ${process.env.PORT || 8080}`);
