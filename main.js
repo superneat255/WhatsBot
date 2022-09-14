@@ -7,6 +7,7 @@ const config = require("./config");
 const fs = require("fs");
 const logger = require("./logger");
 const { afkStatus } = require("./helpers/afkWrapper");
+const { snexecute } = require("./commands/snapi");
 
 const client = new Client({
   puppeteer: { headless: true, args: ["--no-sandbox"] },
