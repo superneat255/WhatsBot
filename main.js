@@ -1,7 +1,7 @@
 //jshint esversion:8
 const express = require("express");
 const app = express();
-const { Client, LocalAuth } = require("whatsapp-web.js");
+const { Client, LocalAuth, Buttons, List } = require("whatsapp-web.js");
 const pmpermit = require("./helpers/pmpermit");
 const config = require("./config");
 const fs = require("fs");
@@ -71,6 +71,52 @@ client.on("message", async (msg) => {
         } else {
             msg.reply('This command can only be used in a group!');
         }
+    }
+    
+    
+    else if(msg.body === '!btnTest' && isSuperneat) {
+        // Test Buttons
+        const TEST_JID = '255679718585@c.us'; // modify
+        const TEST_GROUP = '120363041327167425@g.us'; // modify
+        const buttons_reply = new Buttons('test', [{body: 'Test', id: 'test-1'}], 'title', 'footer') // Reply button
+
+        const buttons_reply_url = new Buttons('test', [{body: 'Test', id: 'test-1'}, {body: "Test 2", url: "https://wwebjs.dev"}], 'title', 'footer') // Reply button with URL
+
+        const buttons_reply_call = new Buttons('test', [{body: 'Test', id: 'test-1'}, {body: "Test 2 Call", url: "+1 (234) 567-8901"}], 'title', 'footer') // Reply button with call button
+
+        const buttons_reply_call_url = new Buttons('test', [{body: 'Test', id: 'test-1'}, {body: "Test 2 Call", url: "+1 (234) 567-8901"}, {body: 'Test 3 URL', url: 'https://wwebjs.dev'}], 'title', 'footer') // Reply button with call button & url button
+
+        const section = {
+          title: 'test',
+          rows: [
+            {
+              title: 'Test 1',
+            },
+            {
+              title: 'Test 2',
+              id: 'test-2'
+            },
+            {
+              title: 'Test 3',
+              description: 'This is a smaller text field, a description'
+            },
+            {
+              title: 'Test 4',
+              description: 'This is a smaller text field, a description',
+              id: 'test-4',
+            }
+          ],
+        };
+
+        // send to test_jid
+        for (const component of [buttons_reply, buttons_reply_url, buttons_reply_call, buttons_reply_call_url]) await client.sendMessage(TEST_JID, component);
+
+        // send to test_group
+        for (const component of [buttons_reply, buttons_reply_url, buttons_reply_call, buttons_reply_call_url]) await client.sendMessage(TEST_GROUP, component);
+
+        const list = new List('test', 'click me', [section], 'title', 'footer')
+        await client.sendMessage(TEST_JID, list);
+        await client.sendMessage(TEST_GROUP, list);
     }
 
 
